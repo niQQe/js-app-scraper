@@ -17,6 +17,7 @@ const getAppartments = async () => {
 };
 
 async function main() {
+	console.log('LETAR...');
 	if (!(await getAppartments())) {
 		console.log('INGA LEDIGA 4OR');
 		return;
