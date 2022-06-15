@@ -17,7 +17,10 @@ const getAppartments = async () => {
 };
 
 async function main() {
-	if (!(await getAppartments())) return;
+	if (!(await getAppartments())) {
+		console.log('INGA LEDIGA 4OR');
+		return;
+	}
 	const transporter = nodemailer.createTransport({
 		service: 'gmail',
 		auth: {
