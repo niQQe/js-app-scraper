@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import nodemailer from 'nodemailer';
 
-const lookingFor = 4;
+const lookingFor = 3;
 
 const getAppartments = async () => {
 	const res = await fetch('https://finfast.se/lediga-objekt');
