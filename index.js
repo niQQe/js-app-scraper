@@ -44,8 +44,12 @@ const targets = {
 };
 
 const getHtml = async (owner) => {
-	const res = await fetch(targets[owner].url);
-	return res.text();
+	try {
+		const res = await fetch(targets[owner].url);
+		return res.text();
+	} catch (e) {
+		console.log(e);
+	}
 };
 
 const getAvailableAppartments = async () => {
@@ -54,16 +58,14 @@ const getAvailableAppartments = async () => {
 	for (const owner in targets) {
 		const html = await getHtml(owner);
 		const available = targets[owner].scrapeFilter(html);
-		if (available) result[owner] = available ? available : null;
+		if (available) result[owner] = available;
 	}
 	return Object.keys(result).length ? result : null;
 };
 
 const generateMessage = (text) => {
 	let message = '';
-	for (let owner in text) {
-		message += `${owner}\n${text[owner]}\n\n`;
-	}
+	for (let owner in text) message += `${owner}\n${text[owner]}\n\n`;
 	return message;
 };
 
@@ -77,7 +79,7 @@ const sendMail = (available) => {
 	});
 	transporter.sendMail({
 		from: 'nickewideving@gmail.com',
-		to: 'nickewideving@gmail.com',
+		to: 'nickewideving@gmail.com, chilivit@hotmail.com',
 		subject: 'Lediga 4or!!',
 		text: generateMessage(available),
 	});
