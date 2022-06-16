@@ -1,41 +1,95 @@
 import fetch from 'node-fetch';
+import dotenv from 'dotenv/config';
 import nodemailer from 'nodemailer';
 
-const lookingFor = 4;
-
-const getAppartments = async () => {
-	const res = await fetch('https://finfast.se/lediga-objekt');
-	const text = (await res.text()).trim();
-	const availableAppartments = text
-		.replace(/\n|\t/g, '')
-		.trim()
-		.match(/<dt class="title">(.*?)<\/dt>/g)
-		.map((val) => /<strong>(.*?)<\/strong>/g.exec(val)[0].replace(/<strong>|<\/strong>/g, ''))
-		.filter((app) => +app[0][0] === lookingFor).join`\n`;
-
-	return availableAppartments.length ? availableAppartments : null;
+const rooms = 4;
+const targets = {
+	Finfast: {
+		url: 'https://finfast.se/lediga-objekt',
+		scrapeFilter: (text) => {
+			const apps = text
+				.replace(/\n|\t/g, '')
+				.trim()
+				.match(/<dt class="title">(.*?)<\/dt>/g)
+				.map((val) => /<strong>(.*?)<\/strong>/g.exec(val)[0].replace(/<strong>|<\/strong>/g, ''))
+				.filter((app) => +app[0][0] === rooms).join`\n`;
+			return apps.length ? apps : null;
+		},
+	},
+	Lundbergs: {
+		url: `https://www.lundbergsfastigheter.se/bostad/lediga-lagenheter/orebro?rum=${rooms}`,
+		scrapeFilter: (text) => {
+			const apps = text
+				.replace(/\n|\t/g, '')
+				.trim()
+				.match(/<td>(.*?)<\/td>/g)
+				.filter((row) => !row.includes('button'))
+				.map((row) => {
+					const parsedRow = row
+						.replace(/<td>|<\/td|<span>|<\/span>|\>|<\/a|<!-- --/g, '')
+						.replace(/<a/, ' %');
+					const indexOfSpecialChar = parsedRow.indexOf('%');
+					return indexOfSpecialChar != -1 ? parsedRow.slice(0, indexOfSpecialChar).trim() : parsedRow;
+				})
+				.reduce((acc, curr, index) => {
+					if (index != 0 && index % 5 === 0) curr = ',' + curr;
+					acc += ' ' + curr;
+					return acc;
+				}, '').split`,`
+				.map((t) => t.trim())
+				.filter((row) => row.includes(`Rum:${rooms}`)).join`\n`;
+			return apps.length ? apps : null;
+		},
+	},
 };
 
-async function main() {
-	console.log('LETAR...');
-	if (!(await getAppartments())) {
-		console.log('INGA LEDIGA 4OR');
-		return;
+const getHtml = async (owner) => {
+	const res = await fetch(targets[owner].url);
+	return res.text();
+};
+
+const getAvailableAppartments = async () => {
+	console.log('Lets take a look...');
+	let result = {};
+	for (const owner in targets) {
+		const html = await getHtml(owner);
+		const available = targets[owner].scrapeFilter(html);
+		if (available) result[owner] = available ? available : null;
 	}
+	return Object.keys(result).length ? result : null;
+};
+
+const generateMessage = (text) => {
+	let message = '';
+	for (let owner in text) {
+		message += `${owner}\n${text[owner]}\n\n`;
+	}
+	return message;
+};
+
+const sendMail = (available) => {
 	const transporter = nodemailer.createTransport({
 		service: 'gmail',
 		auth: {
-			user: 'nickewideving@gmail.com',
-			pass: 'fujwxqlgzwsqxejh',
+			user: process.env.user,
+			pass: process.env.pass,
 		},
 	});
-
 	transporter.sendMail({
 		from: 'nickewideving@gmail.com',
-		to: 'chilivit@hotmail.com',
-		subject: 'Finfast lediga 4or!!',
-		text: await getAppartments(),
+		to: 'nickewideving@gmail.com',
+		subject: 'Lediga 4or!!',
+		text: generateMessage(available),
 	});
+};
+
+async function runScraper() {
+	const available = await getAvailableAppartments();
+	if (available) {
+		sendMail(available);
+	} else {
+		console.log('No available appartments :(');
+	}
 }
 
-main();
+runScraper();
