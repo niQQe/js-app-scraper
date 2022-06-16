@@ -86,6 +86,7 @@ const sendMail = (available) => {
 async function runScraper() {
 	const available = await getAvailableAppartments();
 	if (available) {
+		console.log('There are available Appartments!');
 		sendMail(available);
 	} else {
 		console.log('No available appartments :(');
