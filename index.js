@@ -11,7 +11,8 @@ const client = redis.createClient({
 	},
 });
 
-client.setEx('test', 3600, 'test');
+client.setEx('test', 3600, 'JADÅ');
+client.select('test');
 
 // const rooms = 4;
 // const targets = {
