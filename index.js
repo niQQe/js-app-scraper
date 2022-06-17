@@ -4,7 +4,6 @@ import nodemailer from 'nodemailer';
 import ioredis from 'ioredis';
 
 const db = new ioredis(process.env.REDIS_URL);
-
 const rooms = 4;
 const targets = {
 	Finfast: {
@@ -58,7 +57,9 @@ const getScrapedAppartments = async () => {
 
 const generateMessage = (text) => {
 	let message = '';
-	for (let propertyOwner in text) message += `${propertyOwner}\n${text[propertyOwner]}\n\n`;
+	for (let propertyOwner in text) {
+		if (text[propertyOwner]) message += `${propertyOwner}\n${text[propertyOwner]}\n\n`;
+	}
 	return message;
 };
 
@@ -72,38 +73,37 @@ const sendMail = (available) => {
 	});
 	transporter.sendMail({
 		from: 'nickewideving@gmail.com',
-		to: 'nickewideving@gmail.com, chilivit@hotmail.com',
+		to: 'nickewideving@gmail.com',
 		subject: 'Lediga 4or!!',
 		text: generateMessage(available),
 	});
 };
 
-const checkDB = async (scrapeData) => {
+const getStoredData = async () => {
 	const keys = await db.keys('*');
-	const storedData = await keys.reduce(async (accPromise, key) => {
+	return await keys.reduce(async (accPromise, key) => {
 		const data = await accPromise;
 		data[key] = await db.get(key);
 		return data;
 	}, Promise.resolve({}));
+};
 
-	/** If data is the same as the stored data return null */
-	if (JSON.stringify(scrapeData) === JSON.stringify(storedData)) return null;
+const compareData = (scrapeData, storedData) => JSON.stringify(scrapeData) === JSON.stringify(storedData);
 
-	/** if not same, override new data in database and return the scrapedData */
-	for (const propertyOwner in scrapeData) {
-		db.set(propertyOwner, scrapeData[propertyOwner]);
-	}
-	return scrapeData;
+const setNewData = (scrapeData) => {
+	for (const propertyOwner in scrapeData) db.set(propertyOwner, scrapeData[propertyOwner]);
 };
 
 const runScraper = async () => {
 	const scrapeData = await getScrapedAppartments();
-	const available = await checkDB(scrapeData);
-	if (available) {
-		console.log('New appartments found');
-		sendMail(available);
+	const storedData = await getStoredData();
+	const isAlreadyInDB = compareData(scrapeData, storedData);
+	if (isAlreadyInDB) {
+		console.log('No new data');
 	} else {
-		console.log('No available appartments :(');
+		console.log('New data found');
+		setNewData(scrapeData);
+		sendMail(scrapeData);
 	}
 	db.quit();
 };
