@@ -75,7 +75,7 @@ const sendMail = (available) => {
 	});
 	transporter.sendMail({
 		from: 'nickewideving@gmail.com',
-		to: 'nickewideving@gmail.com',
+		to: 'nickewideving@gmail.com, chilivit@hotmail.com',
 		subject: 'Lediga 4or!!',
 		text: generateMessage(available),
 	});
