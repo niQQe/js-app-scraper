@@ -3,10 +3,7 @@ import dotenv from 'dotenv/config';
 import nodemailer from 'nodemailer';
 import ioredis from 'ioredis';
 
-const db = new ioredis(
-	'redis://:pc29efd960e273ae0b08f7da23364711d84321bf819e560f7654cff3a18bb99d8@ec2-52-211-5-96.eu-west-1.compute.amazonaws.com:7429'
-);
-// const client = new ioredis(process.env.REDIS_URL);
+const db = new ioredis(proces.env.REDIS_URL);
 
 const rooms = 4;
 const targets = {
