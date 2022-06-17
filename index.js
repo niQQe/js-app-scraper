@@ -96,7 +96,7 @@ const checkDB = async (scrapeData) => {
 	return scrapeData;
 };
 
-async function runScraper() {
+const runScraper = async () => {
 	const scrapeData = await getScrapedAppartments();
 	const available = await checkDB(scrapeData);
 	if (available) {
@@ -106,6 +106,6 @@ async function runScraper() {
 		console.log('No available appartments :(');
 	}
 	db.quit();
-}
+};
 
 runScraper();
