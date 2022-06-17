@@ -1,19 +1,15 @@
 import fetch from 'node-fetch';
 import dotenv from 'dotenv/config';
 import nodemailer from 'nodemailer';
-import redis from 'redis';
+import ioredis from 'ioredis';
 
-const client = redis.createClient({
-	url: process.env.REDIS_URL,
-	socket: {
-		tls: true,
-		rejectUnauthorized: false,
-	},
+const client = new ioredis(process.env.REDIS_URL);
+
+client.set('test', 'JADÅ');
+
+client.get('test', (err, res) => {
+	console.log(res);
 });
-
-client.setEx('test', 3600, 'JADÅ');
-client.select('test');
-
 // const rooms = 4;
 // const targets = {
 // 	Finfast: {
