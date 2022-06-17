@@ -3,7 +3,7 @@ import dotenv from 'dotenv/config';
 import nodemailer from 'nodemailer';
 import ioredis from 'ioredis';
 
-const db = new ioredis(proces.env.REDIS_URL);
+const db = new ioredis(process.env.REDIS_URL);
 
 const rooms = 4;
 const targets = {
