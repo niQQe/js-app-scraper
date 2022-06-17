@@ -5,7 +5,7 @@ import ioredis from 'ioredis';
 
 const client = new ioredis(process.env.REDIS_URL);
 
-client.set('test', 'JADÅ');
+// client.set('test', 'JADÅ');
 
 client.get('test', (err, res) => {
 	console.log(res);
