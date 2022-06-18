@@ -37,22 +37,33 @@ const targets = {
 	},
 };
 
-const getScrapedAppartments = async () => {
-	let result = {};
-	for (const propertyOwner in targets) {
+const getAvailableAppartments = async () => {
+	const scrapedData = await Object.keys(targets).reduce(async (accPromise, propertyOwner) => {
+		const data = await accPromise;
 		const html = await (await fetch(targets[propertyOwner].url)).text();
 		const scrapeData = targets[propertyOwner].scrapeFilter(html);
-		result[propertyOwner] = scrapeData;
+		data[propertyOwner] = scrapeData;
+		return data;
+	}, Promise.resolve({}));
+
+	const storedData = await (await db.keys('*')).reduce(async (accPromise, propertyOwner) => {
+		const data = await accPromise;
+		data[propertyOwner] = await db.get(propertyOwner);
+		return data;
+	}, Promise.resolve({}));
+
+	if (JSON.stringify(scrapedData) !== JSON.stringify(storedData)) {
+		for (const propertyOwner in scrapedData) db.set(propertyOwner, scrapedData[propertyOwner]);
+		return scrapedData;
 	}
-	return result;
+	return null;
 };
 
 const generateMessage = (text) => {
-	let message = '';
-	for (let propertyOwner in text) {
+	return Object.keys(text).reduce((message, propertyOwner) => {
 		if (text[propertyOwner] > '') message += `${propertyOwner}\n${text[propertyOwner]}\n\n`;
-	}
-	return message;
+		return message;
+	}, '');
 };
 
 const sendMail = (available) => {
@@ -71,31 +82,13 @@ const sendMail = (available) => {
 	});
 };
 
-const getStoredData = async () => {
-	const keys = await db.keys('*');
-	return await keys.reduce(async (accPromise, key) => {
-		const data = await accPromise;
-		data[key] = await db.get(key);
-		return data;
-	}, Promise.resolve({}));
-};
-
-const compareData = (scrapeData, storedData) => JSON.stringify(scrapeData) === JSON.stringify(storedData);
-
-const setNewData = (scrapeData) => {
-	for (const propertyOwner in scrapeData) db.set(propertyOwner, scrapeData[propertyOwner]);
-};
-
 const runScraper = async () => {
-	const scrapeData = await getScrapedAppartments();
-	const storedData = await getStoredData();
-	const isAlreadyInDB = compareData(scrapeData, storedData);
-	if (isAlreadyInDB) {
-		console.log('No new data');
-	} else {
+	const available = await getAvailableAppartments();
+	if (available) {
 		console.log('New data found');
-		setNewData(scrapeData);
-		sendMail(scrapeData);
+		sendMail(available);
+	} else {
+		console.log('No new data');
 	}
 	db.quit();
 };
