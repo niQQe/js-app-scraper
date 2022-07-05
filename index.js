@@ -5,19 +5,18 @@ import ioredis from 'ioredis';
 import { parse } from 'node-html-parser';
 
 const db = new ioredis(process.env.REDIS_URL);
-const lookingForSize = 4;
+const lookingForSizeBiggerThan = 3;
 const targets = {
 	Finfast: {
 		url: 'https://finfast.se/lediga-objekt',
 		scrapeFilter: (html) => {
 			const root = parse(html);
-			const result = root.querySelectorAll('.title').reduce((acc, curr) => {
-				const app = curr.childNodes[1].childNodes[0].childNodes[0]._rawText.replace(/\n|\t/g, '');
+			const result = root.querySelectorAll('.title').reduce((apps, htmlTag) => {
+				const app = htmlTag.childNodes[1].childNodes[0].childNodes[0]._rawText.replace(/\n|\t/g, '');
 				const [size] = app;
-				if (lookingForSize == size) acc.push(app);
-				return acc;
+				if (+size > lookingForSizeBiggerThan) apps.push(app);
+				return apps;
 			}, []).join`\n`;
-
 			return result.length ? result : '';
 		},
 	},
@@ -25,12 +24,12 @@ const targets = {
 		url: `https://www.lundbergsfastigheter.se/bostad/lediga-lagenheter/orebro?rum=${lookingForSize}`,
 		scrapeFilter: (html) => {
 			const root = parse(html);
-			const result = root.querySelectorAll('.closed').reduce((acc, curr) => {
-				const adress = curr.childNodes[0].childNodes[0]._rawText;
-				const sizeInfo = curr.childNodes[2].childNodes[1]._rawText;
+			const result = root.querySelectorAll('.closed').reduce((apps, htmlTag) => {
+				const adress = htmlTag.childNodes[0].childNodes[0]._rawText;
+				const sizeInfo = htmlTag.childNodes[2].childNodes[1]._rawText;
 				const [size] = sizeInfo;
-				if (lookingForSize == size) acc.push(`${adress}, ${sizeInfo}`);
-				return acc;
+				if (+size > lookingForSizeBiggerThan) apps.push(`${adress}, ${sizeInfo}`);
+				return apps;
 			}, []).join`\n`;
 			return result.length ? result : '';
 		},
