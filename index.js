@@ -5,7 +5,7 @@ import ioredis from 'ioredis';
 import { parse } from 'node-html-parser';
 
 const db = new ioredis(process.env.REDIS_URL);
-const lookingForSizeBiggerThan = 3;
+
 const targets = {
 	Finfast: {
 		url: 'https://finfast.se/lediga-objekt',
@@ -14,21 +14,21 @@ const targets = {
 			const result = root.querySelectorAll('.title').reduce((apps, htmlTag) => {
 				const app = htmlTag.childNodes[1].childNodes[0].childNodes[0]._rawText.replace(/\n|\t/g, '');
 				const [size] = app;
-				if (+size > lookingForSizeBiggerThan) apps.push(app);
+				if (+size > 3) apps.push(app);
 				return apps;
 			}, []).join`\n`;
 			return result.length ? result : '';
 		},
 	},
 	Lundbergs: {
-		url: `https://www.lundbergsfastigheter.se/bostad/lediga-lagenheter/orebro?rum=${lookingForSize}`,
+		url: `https://www.lundbergsfastigheter.se/bostad/lediga-lagenheter/orebro?rum=4`,
 		scrapeFilter: (html) => {
 			const root = parse(html);
 			const result = root.querySelectorAll('.closed').reduce((apps, htmlTag) => {
 				const adress = htmlTag.childNodes[0].childNodes[0]._rawText;
 				const sizeInfo = htmlTag.childNodes[2].childNodes[1]._rawText;
 				const [size] = sizeInfo;
-				if (+size > lookingForSizeBiggerThan) apps.push(`${adress}, ${sizeInfo}`);
+				if (+size === 4) apps.push(`${adress}, ${sizeInfo}`);
 				return apps;
 			}, []).join`\n`;
 			return result.length ? result : '';
