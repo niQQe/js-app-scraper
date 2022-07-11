@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 import ioredis from 'ioredis';
 import { parse } from 'node-html-parser';
 
-const db = new ioredis(process.env.REDIS_URL);
+// const db = new ioredis(process.env.REDIS_URL);
 
 const targets = {
 	Finfast: {
@@ -13,7 +13,7 @@ const targets = {
 			const root = parse(html);
 			const result = root.querySelectorAll('.title').reduce((apps, htmlTag) => {
 				const app = htmlTag.childNodes[1].childNodes[0].childNodes[0]._rawText.replace(/\n|\t/g, '');
-				const [size] = app;
+				const [size] = app.split` `;
 				if (+size > 3) apps.push(app);
 				return apps;
 			}, []).join`\n`;
@@ -45,7 +45,9 @@ const getAvailableAppartments = async () => {
 		return data;
 	}, Promise.resolve({}));
 
-	const storedData = await (await db.keys('*')).reduce(async (accPromise, propertyOwner) => {
+	const storedData = await (
+		await db.keys('*')
+	).reduce(async (accPromise, propertyOwner) => {
 		const data = await accPromise;
 		data[propertyOwner] = await db.get(propertyOwner);
 		return data;
