@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 import ioredis from 'ioredis';
 import { parse } from 'node-html-parser';
 
-// const db = new ioredis(process.env.REDIS_URL);
+const db = new ioredis(process.env.REDIS_URL);
 
 const targets = {
 	Finfast: {
