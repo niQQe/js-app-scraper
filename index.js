@@ -54,7 +54,8 @@ const getAvailableAppartments = async () => {
 	}, Promise.resolve({}));
 
 	if (JSON.stringify(scrapedData) !== JSON.stringify(storedData)) {
-		for (const propertyOwner in scrapedData) db.set(propertyOwner, scrapedData[propertyOwner]);
+		console.log('New data found');
+		for (const propertyOwner in scrapedData) await db.set(propertyOwner, scrapedData[propertyOwner]);
 		return scrapedData;
 	}
 	return null;
@@ -85,12 +86,8 @@ const sendMail = (available) => {
 
 const runScraper = async () => {
 	const available = await getAvailableAppartments();
-	if (available) {
-		console.log('New data found');
-		sendMail(available);
-	} else {
-		console.log('No new data');
-	}
+	if (available) sendMail(available);
+	else console.log('No new data');
 	db.quit();
 };
 
