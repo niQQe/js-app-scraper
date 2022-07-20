@@ -77,8 +77,8 @@ const sendMail = (available) => {
 		},
 	});
 	transporter.sendMail({
-		from: 'nickewideving@gmail.com',
-		to: 'nickewideving@gmail.com, chilivit@hotmail.com',
+		from: process.env.user,
+		to: process.env.user,
 		subject: 'Lediga lägenheter!!',
 		text: generateMessage(available),
 	});
